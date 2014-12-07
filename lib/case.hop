@@ -1,0 +1,4 @@
+! Ultra-simple case construct
+
+dec case : alpha -> (alpha -> beta) -> beta;
+--- case x f <= f x;

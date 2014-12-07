@@ -1,0 +1,103 @@
+! more list utility functions
+
+uses list;
+
+dec member : alpha # list alpha -> bool;
+!!! member(x, l) <= true iff x occurs in the list l
+
+dec many : alpha -> list alpha;
+!!! many x <= an infinite list of x's
+
+dec repeat : num # alpha -> list alpha;
+!!! repeat(n, x) <= a list of n x's.
+
+infix -- : 4;
+dec -- : list alpha # list alpha -> list alpha;
+!!! l1 -- l2 <= l1 with an occurrence (if any) of each element in l2 removed
+
+dec head : list alpha -> alpha;
+!!! head [x1,...,xn] <= x1;
+
+dec tail : list alpha -> list alpha;
+!!! tail [x1,...,xn] <= [x2,...,xn];
+
+dec last : list alpha -> alpha;
+!!! last [x1,...,xn] <= xn;
+
+dec init : list alpha -> list alpha;
+!!! init [x1,...,xn] <= [x1,...,xn-1];
+
+dec rotl : list alpha -> list alpha;
+!!! rotl [x1,...,xn] <= [x2,...,xn,x1];
+
+dec rotr : list alpha -> list alpha;
+!!! rotr [x1,...,xn] <= [xn,x1,...,xn-1];
+
+dec tails : list alpha -> list(list alpha);
+!!! tails [x1,...,xn] <= [[x1,...,xn], [x2,...,xn], ..., [xn], []];
+
+dec inits : list alpha -> list(list alpha);
+!!! inits [x1,...,xn] <= [[], [x1], ..., [x1,...,xn-1], [x1,...,xn]];
+
+dec scan : beta # (beta # alpha -> beta) -> list alpha -> list beta;
+!!! scan(c, f) l <= map (foldl(c, f)) (inits l);
+
+dec concat : list(list alpha) -> list alpha;
+!!! concat [l1,...,ln] <= l1 <> ... <> ln;
+
+dec sum, product : list num -> num;
+!!! sum [x1,...,xn] <= x1 + ... + xn;
+!!! product [x1,...,xn] <= x1 * ... * xn;
+
+dec any, all : list bool -> bool;
+!!! any [x1,...,xn] <= x1 or ... or xn;
+!!! all [x1,...,xn] <= x1 and ... and xn;
+
+private;
+
+--- member(x, l) <= any (map (=x) l);
+
+--- many x <= xs whererec xs == x::xs;
+
+--- repeat(n, x) <= front(n, many x);
+
+dec remove : alpha # list alpha -> list alpha;
+--- remove(x, ys) <= filter (/= x) ys;
+
+--- xs -- ys <= foldr(xs, remove) ys;
+
+--- head(x::xs) <= x;
+
+--- tail(x::xs) <= xs;
+
+--- last [x] <= x;
+--- last(x::xs) <= last xs ;
+
+--- init [x] <= [];
+--- init(x::xs) <= x::init xs;
+
+--- rotl [] <= [];
+--- rotl(x::xs) <= xs <> [x];
+
+--- rotr [] <= [];
+--- rotr xs <= last xs :: init xs;
+
+dec proper_tails : list alpha -> list(list alpha);
+--- proper_tails [] <= [];
+--- proper_tails(x::xs) <= tails xs;
+
+--- tails l <= l::proper_tails l;
+
+--- inits <= ([]::) o (lambda [] => [] | x::xs => map (x::) (inits xs));
+
+--- scan(c, f) <= (c::) o (lambda [] => [] | x::xs => scan(f(c, x), f) xs);
+
+--- concat <= foldr([], (<>));
+
+--- sum <= foldr(0, (+));
+
+--- product <= foldr(1, (*));
+
+--- any <= foldr(false, (or));
+
+--- all <= foldr(true, (and));

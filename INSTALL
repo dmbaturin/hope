@@ -1,0 +1,36 @@
+INSTALLATION PROCEDURE
+
+Unix:
+	make install
+
+That will put everything under /usr/local.  If you want them somewhere
+else, set configure_args in the top-level Makefile.
+
+Others:
+	- you will need to adjust hopelib.h for the target machine.
+	- copy *.[hc] and ../lib/*.hop to your machine.
+	- bash it till it fits.
+
+	The Hope error message:
+		fatal error - can't read module 'Standard'
+	indicates a slip-up in hopelib.h.
+
+VARIABLES
+
+You might wish to (un)define the following cpp variables:
+
+	REALS	num.h		represent numbers as double, rather than long.
+	STATS	runtime.c	produce statistics on space usage and the
+				garbage collector.
+	STATS	interpret.c	produce statistics on expressions entered.
+
+There are also a number of variables in print.h which control the way
+expressions, values and types are parenthesized on output.
+
+You might also wish to adjust the variable MEMSIZE (in memory.c), which
+controls the amount of data space used.
+
+OTHER FILES
+
+	NOTES	maintenance notes
+	HISTORY	revision history

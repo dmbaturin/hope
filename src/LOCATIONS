@@ -1,0 +1,12 @@
+eval	builtin.[ch] compare.[ch] compile.[ch] eval.[ch] exceptions.h
+	interpret.[ch] interrupt.[ch] output.[ch] stream.[ch] value.[ch]
+exprs	argc.h cases.[ch] char.[ch] char_array.[ch] expr.[ch] module.[ch]
+	num.h number.[ch] path.[ch] set.[ch] table.[ch]
+include defs.h structs.h
+main	main.c plan9args.h
+memory	heap.h memory.[ch] newstring.[ch] runtime.c stack.h
+print	pr_expr.[ch] pr_ty_value.[ch] pr_type.[ch] pr_value.[ch] print.h
+source	error.h names.h op.h source.[ch] text.h yylex.c yyparse.y
+type_check	functor_type.[ch] type_check.[ch] type_value.[ch]
+types	bad_rectype.[ch] cons.h deftype.[ch] functors.[ch] polarity.[ch]
+	remember_type.[ch] typevar.h

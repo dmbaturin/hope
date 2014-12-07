@@ -1,0 +1,234 @@
+! examples from "A Hope Tutorial", R. Bailey, Byte, August 1985.
+
+dec max: num # num -> num;
+--- max(x,y) <= if x>y then x else y;
+
+max(10,20) + max(1,max(2,3));
+
+dec MaxOf3: num # num # num -> num;
+--- MaxOf3(x,y,z) <= max(x,max(y,z));
+
+dec mult1: num # num -> num;
+--- mult1(x,y) <= if y=0 then 0 else mult1(x,y-1)+x;
+
+mult1(3,5);
+
+infix mult2 : 8;
+dec mult2: num # num -> num;
+--- x mult2 y <= if y=0 then 0 else x mult2(y-1)+x;
+
+3 mult2 5;
+
+dec time24: num -> num # num # num;
+--- time24(s) <= (s div 3600,
+                  s mod 3600 div 60,
+                  s mod 3600 mod 60);
+
+time24(45756);
+
+10 :: [20,30,40];
+
+['c','a','t'];
+
+dec nats: num -> list(num);
+--- nats(n) <= if n=0 then nil else n::nats(n-1);
+
+nats(10);
+
+dec revnats: num -> list(num);
+--- revnats(n) <= if n=0 then nil else revnats(n-1) <> [n];
+
+revnats(10);
+
+dec sumlist: list(num) -> num;
+--- sumlist(x :: y) <= x + sumlist(y);
+--- sumlist(nil) <= 0;
+
+sumlist([1,2,3]);
+
+infix cat1: 4;
+dec cat1: list(num) # list(num) -> list(num);
+--- (h :: t) cat1 r <= h :: (t cat1 r);
+--- nil cat1 r <= r;
+
+infix mult3 : 8;
+dec mult3: num # num -> num;
+--- x mult3 0 <= 0;
+--- x mult3 succ(y) <= (x mult3 y) + x;
+
+3 mult3 5;
+
+dec time12: num -> num # num;
+--- time12(s) <= (if h>12 then h-12 else h, m) where
+                 (h,m,s) == time24(s);
+
+time12(45756);
+
+dec firsttry: list(char) -> list(char);
+--- firsttry(nil) <= nil;
+--- firsttry(c :: s) <= if c = ' '
+                        then nil
+                        else c :: firsttry(s);
+
+firsttry("You may hunt it with forks and Hope");
+
+dec firstword: list(char) -> list(char) # list(char);
+--- firstword(nil) <= (nil,nil);
+--- firstword(c :: s) <= if c = ' '
+                         then (nil,s)
+                         else ((c :: w),r) where
+                              (w,r) == firstword(s);
+
+firstword("Hope springs eternal ...");
+
+dec wordlist: list(char) -> list(list(char));
+--- wordlist(nil) <= nil;
+--- wordlist(c :: s) <= if c = ' '
+                        then wordlist(s)
+                        else (w :: wordlist(r) where
+                             (w,r) == firstword(c :: s));
+
+wordlist(" While there's life there's Hope ");
+
+typevar alpha;
+infix cat2: 4;
+dec cat2: list(alpha) -> list(alpha);
+
+data vague == yes ++ no ++ maybe;
+
+dec evade: vague -> vague;
+--- evade(yes) <= maybe;
+--- evade(maybe) <= no;
+
+data tiptree(alpha) == notree ++ leaf(alpha) ++
+                       branch(tiptree(alpha) # tiptree(alpha));
+
+dec sumtree: tiptree(num) -> num;
+--- sumtree(notree) <= 0;
+--- sumtree(leaf(n)) <= n;
+--- sumtree(branch(l,r)) <= sumtree(l) + sumtree(r);
+
+sumtree(branch(branch(leaf(1),
+                      branch(leaf(2),
+                             leaf(3))),
+               branch(branch(notree,
+                             leaf(4)),
+                      leaf(5))));
+
+dec flatten: tiptree(alpha) -> list(alpha);
+--- flatten(notree) <= nil;
+--- flatten(leaf(x)) <= [x];
+--- flatten(branch(l,r)) <= flatten(l) <> flatten(r);
+
+flatten(branch(leaf(1),branch(leaf(2),leaf(3))));
+
+flatten(branch(leaf("one"),
+               branch(leaf("two"),
+                      leaf("three"))));
+
+flatten(branch(leaf(leaf('a')),
+               branch(leaf(notree),
+                      leaf(branch(leaf('c'),
+                                  notree)))));
+
+dec square: num -> num;
+--- square(n) <= n*n;
+
+dec squarelist: list(num) -> list(num);
+--- squarelist(nil) <= nil;
+--- squarelist(n :: l) <= square(n) :: squarelist(l);
+
+dec fact: num -> num;
+--- fact(0) <= 1;
+--- fact(succ(n)) <= succ(n) * fact(n);
+
+dec factlist: list(num) -> list(num);
+--- factlist(nil) <= nil;
+--- factlist(n :: l) <= fact(n) :: factlist(l);
+
+dec alllist: list(num) # (num -> num) -> list(num);
+--- alllist(nil, f) <= nil;
+--- alllist(n :: l, f) <= f(n) :: alllist(l,f);
+
+alllist([2,4,6], square);
+
+alllist([2,4,6], fact);
+
+typevar alpha, beta;
+
+dec map: list(alpha) # (alpha -> beta) -> list(beta);
+--- map(nil, f) <= nil;
+--- map(n :: l, f) <= f(n) :: map(l,f);
+
+typevar gamma;
+
+dec len: list(gamma) -> num;
+--- len(nil) <= 0;
+--- len(n :: l) <= 1 + len(l);
+
+len([2,4,6,8]) + len("cat");
+
+map(wordlist("The form remains, the function never dies"), len);
+
+dec sum: list(num) -> num;
+--- sum(nil) <= 0;
+--- sum(n :: l) <= n + sum(l);
+
+dec reduce: list(alpha) # (alpha # beta -> beta) # beta -> beta;
+--- reduce(nil,f,b) <= b;
+--- reduce(n :: l,f,b) <= f(n, reduce(l,f,b));
+
+reduce([1,2,3],nonop +, 0);
+
+dec addone: alpha # num -> num;
+--- addone(_, n) <= n + 1;
+
+reduce("a map they could all understand", addone, 0);
+
+dec insert: alpha # list(alpha) -> list(alpha);
+--- insert(i,nil) <= i :: nil;
+--- insert(i, h::t) <= if i < h
+                       then i :: (h :: t)
+                       else h :: insert(i,t);
+
+reduce("All sorts and conditions of men", insert, []);
+
+data tree(alpha) == empty ++
+                    node(tree(alpha) # alpha # tree(alpha));
+
+dec redtree: tree(alpha) #
+             (alpha # beta -> beta) #
+             beta -> beta;
+--- redtree(empty, f, b) <= b;
+--- redtree(node(l, v, r), f, b) <= redtree(l, f, f(v, redtree(r, f, b)));
+
+dec instree: alpha # tree(alpha) -> tree(alpha);
+--- instree(i, empty) <= node(empty,i,empty);
+--- instree(i,node(l,v,r)) <= if i < v
+                              then node(instree(i,l),v,r)
+                              else node(l,v,instree(i,r));
+
+dec sort: list(alpha) -> list(alpha);
+--- sort(l) <= redtree(reduce(l, instree, empty), (::), []);
+
+sort("Mad dogs and Englishmen");
+
+lambda(x,y) => x + y;
+
+reduce( [ "toe","tac","tic" ], lambda(a,b) => b <> a, []);
+
+map([1,0,2,0,3],lambda(0) => 0 | (succ(n)) => 100 div succ(n));
+
+dec makestep: num -> (num -> num);
+--- makestep(i) <= lambda x => i + x;
+
+makestep ( 3 );
+
+dec twice: (alpha -> alpha) -> (alpha -> alpha);
+--- twice(f) <= lambda x => f(f(x));
+
+twice(square);
+
+twice(square)(3);
+
+twice(twice)(square)(3);

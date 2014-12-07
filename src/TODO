@@ -1,0 +1,12 @@
+Comparison of functions: this must be caught, or it will cause the
+interpreter to go haywire.  It gets caught now, but it's not pretty.
+
+Make it faster (how?)
+
+Unification must be done on expanded types, but more unfolded types
+should be instantiated to more compact ones.  This has been done, but
+needs cleaning up.
+
+Access to command line arguments, probably via a built-in constant
+	argv : list(list char);
+(This is done, but undocumented, as is #!)

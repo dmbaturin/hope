@@ -1,0 +1,23 @@
+! break a string into a list of words, and the reverse
+
+dec words : list char -> list(list char);
+dec unwords : list(list char) -> list char;
+
+! words(unwords ws) = ws
+
+private;
+
+uses ctype, list;
+
+dec words': list char -> list(list char);
+--- words' "" <= [];
+--- words' cs <= w::words rest
+	where (w, rest) == span (not o isspace) cs;
+
+--- words cs <= words' (after_with isspace cs);
+
+dec prespace : list char # list char -> list char;
+--- prespace(w, rest) <= ' ' :: w <> rest;
+
+--- unwords [] <= "";
+--- unwords (w::ws) <= w <> foldr("", prespace) ws;

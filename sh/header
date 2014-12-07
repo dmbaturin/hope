@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# extract the public part of a Hope module
+
+sed -n '/^private;/q
+	/^$/ {
+		: loop
+		N
+		/\nprivate;/q
+		/\n$/ b loop
+	}
+	p
+' ${1-Standard}

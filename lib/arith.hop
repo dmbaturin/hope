@@ -1,0 +1,70 @@
+! some simple arithmetic functions
+
+uses seq;
+
+! powers function
+infixr ^ : 7;
+dec ^ : num # num -> num;
+--- (^) <= pow;
+
+! factorial
+dec fact : num -> num;
+--- fact 0 <= 1;
+--- fact(succ n) <= succ n * fact n;
+
+dec e, pi : num;
+--- e <= exp 1;
+--- pi <= acos 0 * 2;
+
+! area under the normal curve
+dec normal, normalc : num -> num;
+--- normal x <= erf(x/sqrt 2);
+--- normalc x <= erfc(x/sqrt 2);
+
+! factorize a number
+dec factors : num -> list num;
+
+! Euler's totient function
+dec totient : num -> num;
+
+! infinite sequence of Fibonacci numbers
+dec fibs : seq num;
+
+! infinite sequence of primes
+dec primes : seq num;
+
+private;
+
+dec factorize : num # seq num -> list num;
+--- factorize(n, (f, fs)) <=
+        if f*f > n then [n]
+        else if n mod f = 0
+        then f::factorize(n div f, (f, fs))
+        else factorize(n, fs);
+
+--- factors n <= factorize(n, (2, gen_seq (+2) 3));
+
+uses lists;
+
+!!! totient(Prod_i (pi^ei)) = Prod_i ((pi-1)*pi^(ei-1))
+
+dec adjust : list num -> list num;
+--- adjust [] <= [];
+--- adjust [x] <= [x-1];
+--- adjust (x1::x2::xs) <=
+	(if x1 = x2 then x1 else x1-1)::adjust(x2::xs);
+	
+--- totient n <= product (adjust (factors n));
+
+--- fibs <= fib_seq whererec
+		fib_seq == (0, 1, seq (+) (zip_seq (fib_seq, snd fib_seq)));
+
+! prime generation with the sieve of Eratosthenes
+
+dec nonmultiple : num -> num -> bool;
+--- nonmultiple n m <= m mod n /= 0;
+
+dec sieve : seq num -> seq num;
+--- sieve(p, rest) <= (p, sieve(filter_seq (nonmultiple p) rest));
+
+--- primes <= sieve(gen_seq (+1) 2);

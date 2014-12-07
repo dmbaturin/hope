@@ -1,0 +1,29 @@
+! break a stream of characters into lines, and the reverse
+
+dec lines : list char -> list(list char);
+! lines(text) = the list of lines in text.  Lines are terminated by the
+! newline character ('\n'), although the final newline may be missing.
+! The newline characters do not appear in the result.  Example:
+!	lines("Hello world\ngoodbye\n") = ["Hello world", "goodbye"]
+
+dec unlines : list(list char) -> list char;
+! unlines(linelist) = the concatenation of a list of lines, with a newline
+! character added to the end of each line.  Example:
+!	unlines(["Hello world", "goodbye"]) = "Hello world\ngoodbye\n"
+
+! lines and unlines satisfy
+!	lines(unlines(linelist)) = linelist
+!	unlines(lines(text))	= text,		if text ends with a newline
+!				= text <> "\n",	otherwise
+
+private;
+
+--- lines [] <= [];
+--- lines(c::cs) <=
+	if c = '\n' then []::lines cs
+	else (lambda [] => [[c]]	! missing final newline
+	     |       l::ls => (c::l)::ls
+	     ) (lines cs);
+
+--- unlines [] <= [];
+--- unlines(l::ls) <= l <> '\n' :: unlines ls;

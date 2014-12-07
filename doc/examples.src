@@ -1,0 +1,231 @@
+\documentclass{article}
+
+\usepackage{html}
+
+\begin{document}
+
+\title{Some Hope examples}
+\author{Ross Paterson}
+\maketitle
+
+\section{The Factorial Function}
+
+First, the usual recursive version:
+\begin{definition}{rec-fact}{}
+dec fact : num -> num;
+--- fact 0 <= 1;
+--- fact n <= n*fact(n-1);
+\end{definition}
+Note that Hope uses best-fit pattern matching,
+so that the second clause is chosen only if {\tt n} is non-zero.
+Moreover, swapping the clauses doesn't change the behaviour of the program.
+\begin{query}{rec-fact}
+fact 7;
+\end{query}
+
+Second, a non-recursive version using some libraries:
+\begin{definition}{list-fact}{}
+uses lists, range;
+
+dec fact : num -> num;
+--- fact n <= product (1..n);
+\end{definition}
+\begin{query}{list-fact}
+1..7;
+product [1, 2, 3, 4, 5, 6, 7];
+fact 7;
+\end{query}
+
+\section{Fibonacci Numbers}
+
+First, the usual recursive version:
+\begin{definition}{fib}{}
+dec fib : num -> num;
+--- fib 0 <= 1;
+--- fib 1 <= 1;
+--- fib(n+2) <= fib n + fib(n+1);
+\end{definition}
+\begin{query}{fib}
+fib 10;
+\end{query}
+\begin{query}{fib}
+uses list, range;
+1..10;
+map fib (0..10);
+\end{query}
+This is notoriously inefficient.
+A much faster version, using infinite lists, is: 
+\begin{definition}{fibs}{}
+uses lists;
+
+dec fibs : list num;
+--- fibs <= fs whererec fs == 1::1::map (+) (tail fs||fs);
+\end{definition}
+Here {\tt ||} is the `zip' function.
+The infinite list of factorials {\tt fs} is defined in terms of itself,
+as a circular structure (by the {\tt whererec}),
+so that previously calculated values for smaller arguments are reused.
+\begin{query}{fibs}
+front(11, fibs);
+\end{query}
+
+\section{Breadth-first tree traversal}
+
+For this example, we shall define trees as `rose trees':
+\begin{definition}{rose-tree}{}
+type rose_tree alpha == alpha # list(rose_tree alpha);
+\end{definition}
+A tree consists of a label and a list of sub-trees.
+(Note that this particular implementation permits recursive type
+synonym definitions.)
+
+We wish to construct the list the labels in breadth-first order.
+The method used is:
+\begin{enumerate}
+\item Construct an infinite list of levels of the tree:
+\begin{itemize}
+\item The first level comprises just the input tree.
+\item Each other level consists of all the children of the previous level.
+\end{itemize}
+\item Truncate the list before the first empty level.
+\item Concatenate the levels.
+\item Extract the labels of the trees.
+\end{enumerate}
+This is represented directly,
+using `{\tt .}' to stand for reversed function application.
+\begin{definition}{bf}{rose-tree}
+uses lists, functions, products;
+
+dec bf_list : rose_tree alpha -> list alpha;
+--- bf_list t <= [t].
+        iterate (concat o map snd).
+        front_with (/= []).
+        concat.
+        map fst;
+\end{definition}
+\begin{query}{bf}
+bf_list (1, [(2, [(5, []),
+                  (6, [(10, [])])
+                 ]),
+             (3, [(7, [])]),
+             (4, [(8, [(11, [])]),
+                  (9, [])
+                 ])
+            ]);
+\end{query}
+
+\section{Symbolic Boolean Expressions}
+
+We define a simple variable type:
+\begin{definition}{var}{}
+type var == char;
+\end{definition}
+We represent Boolean expressions by trees:
+\begin{definition}{bexp}{var}
+infixrl IMPLIES: 1;
+infix   OR: 2;
+infix   AND: 3;
+
+data bexp ==    VAR var ++ bexp AND bexp ++ bexp OR bexp ++
+                NOT bexp ++ bexp IMPLIES bexp;
+\end{definition}
+We define an {\em assignment} as a list assigning Boolean values to variables:
+\begin{definition}{assignment}{var}
+type assignment == list(var # truval);
+\end{definition}
+Now define a function to evaluate a Boolean expression with respect
+to an assignment of Boolean values to the variables it contains:
+\begin{definition}{evaluate}{bexp,assignment}
+dec lookup : alpha # list(alpha#beta) -> beta;
+--- lookup(a, (key, datum)::rest) <=
+        if a = key then datum else lookup(a, rest);
+
+dec evaluate : bexp # assignment -> truval;
+--- evaluate(VAR v, a) <= lookup(v, a);
+--- evaluate(e1 AND e2, a) <= evaluate(e1, a) and evaluate(e2, a);
+--- evaluate(e1 OR e2, a) <= evaluate(e1, a) or evaluate(e2, a);
+--- evaluate(NOT e, a) <= not(evaluate(e, a));
+--- evaluate(e1 IMPLIES e2, a) <=
+        not(evaluate(e1, a)) or evaluate(e2, a);
+\end{definition}
+\begin{query}{evaluate}
+evaluate (VAR 'a' AND VAR 'b' OR VAR 'c',
+          [('a', false), ('b', true), ('c', false)]);
+\end{query}
+\begin{query}{evaluate}
+evaluate (VAR 'a' AND VAR 'b' OR VAR 'c',
+          [('a', true), ('b', true), ('c', false)]);
+\end{query}
+We intend to use this function in a function to test whether any Boolean
+expression is a tautology,
+{\it i.e{.}} is true for any assignment of its variables.
+First, we need a function to extract the list of variables in an expression.
+The following function merges two ordered lists to form an ordered list
+without duplicates:
+\begin{definition}{merge}{}
+dec merge : list alpha # list alpha -> list alpha;
+--- merge([], l) <= l;
+--- merge(l, []) <= l;
+--- merge(x1::l1, x2::l2) <=
+        if x1 = x2 then x1::merge(l1, l2)
+        else if x1 < x2 then x1::merge(l1, x2::l2)
+                        else x2::merge(x1::l1, l2);
+\end{definition}
+The next function returns the ordered list of variables
+in a Boolean expression, without duplicates:
+\begin{definition}{vars}{bexp,merge}
+dec vars : bexp -> list var;
+--- vars(VAR v) <= [v];
+--- vars(e1 AND e2) <= merge(vars e1, vars e2);
+--- vars(e1 OR e2) <= merge(vars e1, vars e2);
+--- vars(NOT e) <= vars e;
+--- vars(e1 IMPLIES e2) <= merge(vars e1, vars e2);
+\end{definition}
+\begin{query}{vars}
+vars (VAR 'a' AND VAR 'b' OR VAR 'a');
+\end{query}
+\begin{query}{vars}
+vars ((VAR 'a' IMPLIES VAR 'b' IMPLIES VAR 'c') IMPLIES
+        (VAR 'a' IMPLIES VAR 'b') IMPLIES
+        VAR 'a' IMPLIES VAR 'c');
+\end{query}
+Now we want to generate the the list of all possible assignments to
+a list of variables:
+\begin{definition}{interpretations}{assignment}
+uses list;
+
+dec interpretations: list var -> list assignment;
+--- interpretations [] <= [[]];
+--- interpretations(h::t) <=
+        (map ((h, false)::) l <> map ((h, true)::) l)
+        where l == interpretations t;
+\end{definition}
+\begin{query}{interpretations}
+interpretations "a";
+\end{query}
+\begin{query}{interpretations}
+interpretations "ab";
+\end{query}
+\begin{query}{interpretations}
+interpretations "abc";
+\end{query}
+Finally, we put all these together.
+An expression is a tautology if it evaluates to true for all possible
+assignments to the variables it contains:
+\begin{definition}{tautology}{evaluate,vars,interpretations}
+dec tautology: bexp -> truval;
+--- tautology e <=
+        foldr(true, (and))
+                (map evaluate
+                        (dist(e, interpretations(vars(e)))));
+\end{definition}
+\begin{query}{tautology}
+tautology (VAR 'a' AND VAR 'b' OR VAR 'a');
+\end{query}
+\begin{query}{tautology}
+tautology ((VAR 'a' IMPLIES VAR 'b' IMPLIES VAR 'c') IMPLIES
+                (VAR 'a' IMPLIES VAR 'b') IMPLIES
+                VAR 'a' IMPLIES VAR 'c');
+\end{query}
+
+\end{document}

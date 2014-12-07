@@ -1,0 +1,37 @@
+There is no numeric overflow checking.
+
+Type synonyms are sometimes unrolled too much.
+
+Bugs with the extension to mu's and change of functors:
+- Explicit definitions are allowed (they're needed for # and ->) but
+  are not checked.
+- Polarity of mu-types is not done properly.
+- Types like mu x => x and so on (including synonyms that turn out to
+  be projections) haven't been thoroughly checked.
+- MAX_VARS_IN_TYPE is not checked with respect to mu variables.
+
+LANGUAGE PROBLEMS
+
+In order to have alpha', beta', etc accepted as type variables, primes
+are ignored in typevar declarations.
+
+If multiple-argument lambda-expressions are permitted, expressions like
+	lambda cons x => e
+will no longer mean what they used to.  So currently there're not allowed.
+
+If you use "Standard-new.hop", strings and explicit lists get list types:
+>: [1, 2];
+>> [1, 2] : list num
+>: "ab";
+>> "ab" : list char
+>: ['a', 'b'];
+>> "ab" : list char
+If you use :: and nil you get the more general types:
+>: 1::2::nil;
+>> [1, 2] : listShape num (listShape num (listShape alpha beta))
+>: 'a'::'b'::nil;
+>> "ab" : listShape char (listShape char (listShape alpha beta))
+Unfortunately, there are outputs like
+>: 1::'a'::nil;
+>> [1, 'a'] : listShape num (listShape char (listShape alpha beta))
+which cannot be re-entered in the form shown.

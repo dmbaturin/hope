@@ -1,0 +1,39 @@
+! diagonalization of the product of a pair of lists
+
+infixr // : 3;
+dec // : list alpha # list beta -> list(alpha # beta);
+
+! xs//ys is the concatenation of the following diagonals,
+! each running down and right:
+!
+!	3 . . . . . . .
+!	   \
+!	2 . . . . . . .
+!   ys	   \ \
+!	1 . . . . . . .
+!	   \ \ \
+!	0 . . . . . . .
+!
+!	  0 1 2 3 4 5 6 ...
+!
+!		xs
+
+private;
+
+uses lists;
+
+dec diagonal : list alpha # list beta # list beta -> list(alpha # beta);
+
+	! produce all the diagonals up to and including the one starting
+	! in the top left corner (if any).
+
+--- diagonal(xs, rev_ys, y::ys) <=
+	(xs||y::rev_ys) <> diagonal(xs, y::rev_ys, ys);
+
+	! produce all the diagonals after the one starting in the top
+	! left corner (if any).
+
+--- diagonal(xs, rev_ys, []) <=
+	concat(map (||rev_ys) (tails (tail xs)));
+
+--- xs//ys <= diagonal(xs, [], ys);

@@ -1,0 +1,37 @@
+A lazy interpreter for the functional language Hope
+Copyright 1990,1991,1993 by Ross Paterson
+
+See also the WWW page at http://www.soi.city.ac.uk/~ross/Hope/
+
+LICENCE AND DISCLAIMER
+
+In the following, "this program" refers to the Hope interpreter and its
+documentation, excluding Roger Bailey's Hope Tutorial.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+SUBDIRECTORIES
+
+doc	a short reference manual (in LaTeX)
+lib	various Hope modules
+src	C source for the interpreter
+test	a small test suite for the interpreter
+sh	miscellaneous shell scripts.
+
+Please contact me if you find or fix a bug, do a port or think of an
+improvement.
+--
+Ross Paterson <ross@soi.city.ac.uk>
+Department of Computing, City University, London EC1

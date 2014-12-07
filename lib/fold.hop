@@ -1,0 +1,24 @@
+! some generalized higher-order functions for recursive types
+! (an experimental exploitation of regular types)
+
+! if YF == F YF,
+!	fold F : (F alpha -> alpha) -> YF -> alpha
+!	unfold F : (alpha -> F alpha) -> alpha -> YF
+!	rec F : (YF # F alpha -> alpha) -> YF -> alpha
+
+uses products;
+
+dec fold : ((gamma -> alpha) -> gamma -> beta) ->
+		(beta -> alpha) -> gamma -> alpha;
+--- fold F f <= f o F(fold F f);
+
+dec unfold : ((alpha -> gamma) -> beta -> gamma) ->
+		(alpha -> beta) -> alpha -> gamma;
+--- unfold F f <= F(unfold F f) o f;
+
+! Primitive recursion
+
+dec rec : ((gamma -> gamma # alpha) -> gamma -> beta) ->
+		(beta -> alpha) -> gamma -> alpha;
+--- rec F f <= f o F(id /\ rec F f);
+!!! rec F f <= snd o fold F (F fst /\ f);

@@ -1,0 +1,21 @@
+(lambda f => lambda x => lambda y => f(x, y)) (+);
+
+(lambda f => lambda x => lambda y => f(x, y)) (+) 3;
+
+(lambda x => lambda y => x) (lambda z => 0);
+
+(lambda x => lambda y => (+)x) (1, 2);
+
+infix COMMA: 3;
+data new_type == num COMMA num;
+
+dec left: new_type -> num;
+--- left(a COMMA b) <= b;
+
+(lambda x => lambda y => left x)(1 COMMA 2);
+
+infix op: 4;
+
+lambda (op) => lambda x => x op x;
+
+(lambda (op) => lambda x => x op x) (*);

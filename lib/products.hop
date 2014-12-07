@@ -1,0 +1,18 @@
+! functions associated with the product type
+
+infixr /\ : 2;
+dec /\ : (alpha -> beta) # (alpha -> beta') -> alpha -> beta # beta';
+--- (f /\ g) x <= (f x, g x);
+
+dec fst : alpha # beta -> alpha;
+--- fst (x, y) <= x;
+
+dec snd : alpha # beta -> beta;
+--- snd (x, y) <= y;
+
+dec dup : alpha -> alpha # alpha;
+--- dup x <= (x, x);
+
+dec flip : (alpha # alpha') # (beta # beta') ->
+	   (alpha # beta) # (alpha' # beta');
+--- flip ((x, x'), (y, y')) <= ((x, y), (x', y'));

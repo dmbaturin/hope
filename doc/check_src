@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Check .src files
+
+nawk_file=$HOME/public_html/Hope/utils/tree.nawk
+
+for file
+do
+	echo Checking $file ...
+	grep -n '\\begin{query}' $file |
+		cut -d: -f1 |
+		sed "s@.*@nawk -f $nawk_file QLINE=& $file $file | hope@" |
+		sh >/dev/null
+done

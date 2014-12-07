@@ -1,0 +1,684 @@
+\documentclass[11pt]{article}
+
+\usepackage{a4wide}
+\usepackage{html}
+
+\begin{htmlonly}
+\newcommand{\op}{\Math{@}}
+\newenvironment{block}{}{}
+\newcommand{\sub}[2]{#1\_{\Math{#2}}}
+\newcommand{\primesub}[2]{#1\_\Math{#2'}}
+\newcommand{\Cdots}{\textrm{\ldots}}
+\end{htmlonly}
+
+% Latex version of the above:
+% The latexonly environment doesn't work for this purpose.
+\latex{\input{latexonly}}
+
+% The rest is common to both.
+
+\newcommand{\Hope}{{\scshape Hope}}
+
+\input{op}
+
+% latex2html doesn't know all of these
+\newcommand{\Meta}[1]{\textit{\textmd{\textrm{#1}}}}
+\newcommand{\Math}[1]{\textit{\textmd{\textrm{#1}}}}
+\newcommand{\Samp}[1]{\textup{\textmd{\texttt{#1}}}}
+\newcommand{\N}[1]{\mbox{#1}}
+
+\newenvironment{commands}%
+{\begin{description}\latex{\itemsep 0pt plus 1pt \parsep 0pt plus 1pt}}%
+{\end{description}}
+
+\newcommand{\cmditem}[1]{\item[\Samp{#1}]\latex{\hfill \\}}
+
+\newcommand{\Section}[2]{\section{#2}\label{sec:#1}}
+\newcommand{\SubSection}[2]{\subsection{#2}\label{sec:#1}}
+\newcommand{\sectionref}[2]{\hyperref{#1}{#1 (see section }{)}{#2}}
+
+\newcommand{\optional}[1]{\mbox{{\rm [}}{#1}\mbox{{\rm ]}}}
+
+\newcommand{\expr}{\htmlref{\Meta{expression}}{sec:expressions}}
+\newcommand{\pat}{\htmlref{\Meta{pattern}}{sec:patterns}}
+\newcommand{\type}{\htmlref{\Meta{type}}{sec:types}}
+\newcommand{\ident}{\htmlref{\Meta{identifier}}{sec:identifiers}}
+\newcommand{\num}{\htmlref{\Meta{numeric-literal}}{numbers}}
+\newcommand{\identX}[1]{\htmlref{\Meta{#1-identifier}}{sec:identifiers}}
+
+\newcommand{\identM}{\identX{module}}
+\newcommand{\identT}{\identX{type}}
+\newcommand{\identTC}{\identX{type-constructor}}
+\newcommand{\identC}{\identX{data-constant}}
+\newcommand{\identCC}{\identX{data-constructor}}
+\newcommand{\identV}{\identX{value}}
+
+\newcommand{\Standard}
+{\hyperref{\Samp{Standard}}{\Samp{Standard} (see appendix }{)}{sec:standard}}
+
+\newenvironment{addition}{}{}
+
+\begin{document}
+
+\title{A Hope Interpreter --- Reference}
+\author{Ross Paterson}
+\maketitle
+
+%\tableofcontents
+
+This manual is not a tutorial on functional programming,
+or on the language \Hope.
+If you don't know about both, you might start with something like
+Roger Bailey's tutorial \cite{tutorial}.
+
+\Section{lexical}{Lexical structure}
+
+The input is divided into a sequence of symbols of the following kinds:
+\begin{itemize}
+\item
+a punctuation character: one of ``\Samp{( ) , ; [ ]}'',
+\item
+an identifier:
+either
+\begin{enumerate}
+\item
+a letter or underscore followed by zero or more letters, underscores or digits
+(followed by zero or more single quotes), or
+\item
+a sequence of graphic characters that are neither white-space, letters,
+underscores, digits, punctuation nor one of ``\Samp{\N{!} " '}'',
+\end{enumerate}
+\item
+\label{numbers}a numeric literal:
+a sequence of digits
+(on some systems, optionally with an embedded decimal point
+and an optionally signed exponent),
+\item
+a character literal:
+either a single character (but not a newline),
+or a character escape sequence (as in the C language),
+enclosed in single quotes, or
+\item
+a string literal:
+a sequence of zero or more characters
+(but not newlines of double quotes) or character escape sequences,
+enclosed in double quotes.
+\end{itemize}
+
+Symbols may be separated by white-space and comments.
+A comment is introduced by `\Samp{!}' and continues to the end of the line.
+
+The following identifiers are reserved by the language:
+\begin{verbatim}
+      ++ --- : <= == => |
+      abstype data dec display else edit exit if in
+      infix infixr lambda let letrec private save then
+      type typevar uses where whererec write
+\end{verbatim}
+The following identifers are also reserved,
+for compatability with other implementations:
+\begin{verbatim}
+      end module nonop pubconst pubfun pubtype
+\end{verbatim}
+Also, the following synonyms are available:
+\verb|\| for \Samp{lambda},
+\Samp{use} for \Samp{uses} and
+\Samp{infixrl} for \Samp{infixr}.
+
+\Section{identifiers}{Identifiers}
+
+Identifiers may refer to
+\begin{itemize}
+\item
+modules,
+
+\item
+types,
+
+\item
+type constructors,
+
+\item
+data constants,
+
+\item
+data constructors, or
+
+\item
+values.
+\end{itemize}
+The same identifier may refer to more than one of these kinds,
+but in any scope it cannot refer to more than one of the last three classes.
+
+Identifiers may be defined as \label{operators}\emph{infix operators},
+by \Samp{infix} and \Samp{infixr} \sectionref{definitions}{sec:definitions}.
+This affects only the way in which they are parsed and printed:
+if an identifier \op{} is declared as an infix operator,
+constructs of the form \Samp{\op(\Math{a}, \Math{b})}
+are written \Math{a} \op{} \Math{b}.
+To refer to \op{} on its own, use \Samp{(\op)}.
+A special case: in any subsequent declaration of \op{} as a data constructor,
+\Samp{\op(\sub{\type}{1}{} \# \sub{\type}{2})}
+is written \sub{\type}{1}{} \op{} \sub{\type}{2}.
+
+A number of identifiers are predefined in the module \Standard.
+
+\Section{composite}{Composite structures}
+
+In the following description,
+constant width text (e.g. \Samp{dec} or \Samp{++})
+denotes literal program text,
+while italic text (e.g. \identT{} or \pat)
+denotes syntactic classes.
+Non-terminals are defined in sections of the same name.
+The brackets \optional{ and } are used around optional text.
+Alternative forms are used if identifiers are declared as
+\sectionref{operators}{operators}.
+
+\SubSection{modules}{Modules}
+
+A \Hope{} module \Math{name} is a text file \Math{name}\Samp{.hop}
+consisting of definitions.
+The definitions may occur in any order,
+but identifiers must be appropriately declared before use.
+
+There is a special \Hope{} module called \Standard,
+which is implicitly imported by every other \Hope{} module and session.
+
+An interactive session consists of \sectionref{definitions}{sec:definitions}
+together with other \sectionref{commands}{sec:commands}.
+
+\SubSection{definitions}{Definitions}
+
+\begin{commands}
+
+\cmditem{uses \identM, \ldots, \identM;}
+all the definitions visible in the named modules are to be visible in
+the current module or session.
+The modules are searched for first in the current directory,
+and then in a library directory.
+Used modules may use other modules, and so on, provided there are no cycles.
+Definitions visible in the using module (or session)
+will not be visible in a used module,
+unless the definitions reside in a third module used by both.
+
+\cmditem{private;}
+all subsequent definitions in this module will be hidden from
+other modules using it.
+In particular, the visible definitions in a module used after this directive
+will not be visible to any module using this one,
+whereas they would be if the module was used before the directive.
+
+\cmditem{infix \ident, \ldots, \ident{} \N{:} \num;}
+declare left associative infix \htmlref{operators}{operators}
+with the stated precedence,
+from \Samp{\MINPREC} (weakest) to \Samp{\MAXPREC} (strongest).
+
+\cmditem{infixr \ident, \ldots, \ident{} \N{:} \num;}
+like \Samp{infix}, except that the \htmlref{operators}{operators}
+are right associative.
+
+\cmditem{abstype \ident{} \optional{(\sub{\ident}{1}, \ldots, \sub{\ident}{n})};}
+an `abstract' type definition,
+declaring the \ident{} as a type or type constructor identifier,
+which may be used in subsequent definitions.
+The \ident{} may be defined later by a \Samp{data} or \Samp{type} definition.
+If there is only one argument, the parentheses may be omitted.
+
+\cmditem{data \ident{} \begin{block}
+	\optional{(\sub{\ident}{1}, \ldots, \sub{\ident}{n})} == \\
+	\ \ \ \ \ \ \primesub{\ident}{1} \optional{\sub{\type}{1}} ++ \ldots{} ++
+		\primesub{\ident}{k} \optional{\sub{\type}{k}};
+\end{block}}
+define the \ident{} as a type or type constructor,
+with the \primesub{\ident}{k} as its data constants and constructors.
+If there is only one simple argument, the parentheses may be omitted.
+
+The definition may be recursive.
+Any uses of \ident{} in \sub{\type}{i} should have the same parameters as the
+left-hand side.
+
+\begin{addition}
+Any constructor identifier may have been previously declared
+in a \Samp{dec} declaration,
+in which case the new type of the identifier must be an instance
+of that given in the prior declaration.
+\end{addition}
+
+\cmditem{type \ident{} \optional{(\sub{\ident}{1}, \ldots, \sub{\ident}{n})} == \type;}
+define the \ident{} as an abbreviation for the \type,
+which may refer to the argument type identifiers.
+If there is only one simple argument, the parentheses may be omitted.
+
+%The definition must not be recursive,
+%but indirect recursion (using \Samp{abstype} definitions) is permitted,
+%provided a type constructor defined with \Samp{data} intervenes.
+
+\begin{addition}
+The definition may be recursive.
+Any uses of \ident{} in \type{} should have the same parameters as the
+left-hand side.
+See \hyperref{Regular types}{section }{}{sec:regular} for more details.
+\end{addition}
+
+\cmditem{typevar \ident, \ldots, \ident;}
+declare new type variables,
+for use in \Samp{dec} declarations.
+
+\begin{addition}
+If \ident{} is declared, then \ident\Samp{'}, \ident\Samp{''} and so on
+may also be used as type variables
+(single quotes in \ident{} itself are ignored).
+\end{addition}
+
+\cmditem{dec \ident, \ldots, \ident{} \N{:} \type;}
+declare the identifiers as value identifiers of the given type,
+in which type variables declared by \Samp{typevar} definitions
+stand for any type.
+
+\begin{addition}
+If only one identifier is being declared, the keyword \Samp{dec} is optional.
+\end{addition}
+
+\cmditem{--- \identV{} \sub{\pat}{1} \Cdots{} \sub{\pat}{n} <= \expr;}
+define the value of an identifier.
+If \Math{n} is zero, only one such definition is allowed for each identifier.
+Otherwise, the identifier may be defined by one or more such definitions,
+each with the same number of arguments.
+See \hyperref{Semantics of pattern matching}{section }{ for the semantics}%
+{sec:pattern-matching}.
+
+\begin{addition}
+The keyword \Samp{---} is optional.
+\end{addition}
+\end{commands}
+
+\SubSection{types}{Types}
+
+\begin{commands}
+\cmditem{\identT}
+the type referred to.
+
+\cmditem{\identTC(\type, \ldots, \type)}
+a constructed type or type abbreviation.
+If there is only one type argument, the parentheses may be omitted.
+
+\cmditem{(\type)}
+same as \type.
+\end{commands}
+
+\SubSection{patterns}{Patterns}
+
+\begin{commands}
+\cmditem{\ident}
+(but not a \identC)
+a variable, which matches any value.
+No variable may occur twice in the same pattern.
+Each free occurrence of the \ident{} in the expression corresponding
+to the pattern is bound by this pattern.
+That is, the identifier is a \identV{} in the expression,
+referring to the value matched.
+
+\cmditem{\identC}
+matches the named data constant.
+
+\cmditem{\identCC{} \pat}
+matches a value formed by applying the data constructor
+to a value matching \pat.
+
+\cmditem{\num}
+\Samp{1}, \Samp{2}, \ldots{} are abbreviations for
+\Samp{succ(0)}, \Samp{succ(succ(0))} etc.
+
+\cmditem{\pat{} + \num}
+The form \pat\Samp{+}\Math{k} is an abbreviation for
+\Samp{succ} applied \Math{k} times to \pat.
+
+\cmditem{'\Math{c}'}
+matches the character constant.
+
+\cmditem{"\Meta{string}"}
+abbreviation for a list of characters.
+
+\cmditem{[\sub{\pat}{1}, \ldots, \sub{\pat}{n}]}
+equivalent to
+`\Samp{\sub{\pat}{1} \N{::} \ldots{} \mbox{::} \sub{\pat}{n} \N{::} nil}'.
+
+\cmditem{[]}
+equivalent to `\Samp{nil}'.
+
+\cmditem{\sub{\pat}{1}, \sub{\pat}{2}}
+matches a pair of values matching \sub{\pat}{1} and \sub{\pat}{2} respectively.
+
+\cmditem{(\pat)}
+same as \pat.
+\end{commands}
+
+\SubSection{expressions}{Expressions}
+
+\begin{commands}
+\cmditem{\identV}
+the value bound to the identifier.
+
+\cmditem{\identC}
+a data constant.
+
+\cmditem{\identCC}
+a data constructor.
+
+\cmditem{\num}
+\Samp{1}, \Samp{2}, \ldots{} are abbreviations for
+\Samp{succ(0)}, \Samp{succ(succ(0))} etc.
+
+\cmditem{'\Math{c}'}
+character constant.
+
+\cmditem{"\Meta{string}"}
+abbreviation for a list of characters.
+
+\cmditem{[\sub{\expr}{1}, \ldots, \sub{\expr}{n}]}
+equivalent to
+`\Samp{\sub{\expr}{1} \N{::} \ldots{} \N{::} \sub{\expr}{n} \N{::} nil}'.
+
+\cmditem{[]}
+equivalent to `\Samp{nil}'.
+
+\cmditem{\sub{\expr}{1}, \sub{\expr}{2}}
+a pair formed from the values of \sub{\expr}{1} and \sub{\expr}{2}.
+
+\cmditem{(\expr)}
+same as \expr.
+
+\cmditem{\sub{\expr}{1} \sub{\expr}{2}}
+the result of applying the function or constructor value of \sub{\expr}{1}
+to the value of \sub{\expr}{2}.
+
+%\cmditem{lambda \begin{tabular}[t]{@{}l@{}}
+%	$\pat_{1 1}$ \Cdots{} $\pat_{1 n}$ => \sub{\expr}{1} | \Cdots{} | \\
+%	$\pat_{k 1}$ \Cdots{} $\pat_{k n}$ => \sub{\expr}{k}
+%\end{tabular}}
+\cmditem{lambda \sub{\pat}{1} => \sub{\expr}{1} | \Cdots{} | \sub{\pat}{k} => \sub{\expr}{k}}
+an anonymous function.
+See \hyperref{Semantics of pattern matching}{section }{ for the semantics}%
+{sec:pattern-matching}.
+
+\cmditem{if \sub{\expr}{1} then \sub{\expr}{2} else \sub{\expr}{3}}
+a conditional expression,
+equal to \sub{\expr}{2} if \sub{\expr}{1} is \Samp{true},
+or \sub{\expr}{3} if it is \Samp{false}.
+
+\cmditem{let \pat{} == \sub{\expr}{1} in \sub{\expr}{2}}
+the same as \sub{\expr}{2}, with the variables in \sub{\expr}{2} replaced by the values
+assigned to them in matching \pat{} to \sub{\expr}{1}.
+It is equivalent to
+\begin{quotation}
+\Samp{(lambda \pat{} => \sub{\expr}{2}) \sub{\expr}{1}}
+\end{quotation}
+
+\cmditem{letrec \pat{} == \sub{\expr}{1} in \sub{\expr}{2}}
+like \Samp{let},
+except that \pat{} must be irrefutable,
+and its variables may also appear in \sub{\expr}{1}.
+It is a more efficient version of
+\begin{quotation}
+\Samp{(lambda \pat{} => \sub{\expr}{2})(fix(lambda \pat{} => \sub{\expr}{1}))}
+\end{quotation}
+for a function \Samp{fix} defined as
+\begin{verbatim}
+      dec fix: (alpha -> alpha) -> alpha;
+      --- fix f <= f(fix f);
+\end{verbatim}
+
+\cmditem{\sub{\expr}{1} where \pat{} == \sub{\expr}{2}}
+same as `\Samp{let \pat{} == \sub{\expr}{2} in \sub{\expr}{1}}'.
+
+\cmditem{\sub{\expr}{1} whererec \pat{} == \sub{\expr}{2}}
+same as `\Samp{letrec \pat{} == \sub{\expr}{2} in \sub{\expr}{1}}'.
+\end{commands}
+
+Ambiguities in patterns and expressions are resolved by
+the following binding precedences, from weakest to strongest:
+\begin{itemize}
+\item comma (right associative)
+\item \Samp{lambda}
+\item \Samp{let} and \Samp{letrec}
+\item \Samp{where} and \Samp{whererec}
+\item \Samp{if}
+\item infix \htmlref{operators}{operators} of precedence \MINPREC to \MAXPREC
+\item function application (left associative)
+\end{itemize}
+\begin{addition}
+For any infix \htmlref{operators}{operators} \op{} and expression \Math{e},
+the following abbreviations, called \emph{operator sections}, are permitted:
+\begin{description}
+\item[\Samp{(\Math{e} \op)}]
+is short for \Samp{lambda x => \Math{e} \op{} x}.
+
+\item[\Samp{(\op{} \Math{e})}]
+is short for \Samp{lambda x => x \op{} \Math{e}}.
+\end{description}
+\end{addition}
+
+\SubSection{commands}{Interactive commands}
+
+In a \Hope{} session, any \sectionref{definitions}{sec:definitions}
+may be entered (although \Samp{private} will be ignored),
+as well as the following commands:
+\begin{commands}
+\cmditem{\expr;}
+display the value and most general type of \expr.
+Lazy evaluation is used,
+but nothing is displayed until the value is fully evaluated.
+
+The \expr{} may involve the special variable \Samp{input},
+which denotes the list of characters typed at the terminal.
+
+\cmditem{write \expr~\optional{to "\Math{file}"};}
+output the value of \expr{} (which must be a list of values) more directly:
+if the value is a list of characters, the characters are printed;
+otherwise each value is printed on a line by itself.
+Each element of the list is printed as soon as its value is computed
+(by lazy evaluation).
+If the \Samp{to} clause is present, the output is written to the file;
+otherwise it is printed on the screen.
+It is safe to write to a file that is read by the expression---no
+interference will occur.
+
+The \expr{} may involve the special variable \Samp{input},
+which denotes the list of characters typed at the terminal.
+
+\cmditem{display;}
+display the \htmlref{definitions}{sec:definitions} of the current session.
+
+\cmditem{save \identM;}
+save the \htmlref{definitions}{sec:definitions} of the current session
+in a new \htmlref{module}{sec:module} of the given name.
+The \htmlref{definitions}{sec:definitions} are replaced in the current session
+by a reference to the new module.
+
+\cmditem{edit \optional{\identM};}
+(Unix only)
+invoke the default editor on
+the named \htmlref{module}{sec:modules}, if given,
+or otherwise on a file containing the current definitions,
+and then re-enter the interpreter with the revised definitions.
+
+\cmditem{exit;}
+exit from the interpreter.
+\end{commands}
+
+\Section{pattern-matching}{Semantics of pattern matching}
+
+The following is a partial specification; nothing more is guaranteed.
+Informally, when patterns overlap,
+more specific patterns are preferred to more specific ones.
+Apart from that, the choice is unspecified.
+More formally:
+
+Matching a value with a pattern involves evaluating the value sufficiently
+to compare its data constants and constructors with those in the pattern,
+in some consistent, top-to-bottom (but otherwise unspecified) order.
+This match may result in
+\begin{description}
+\item[success:]
+the value can be seen to be an instance of the pattern,
+
+\item[failure:]
+the value cannot be an instance of the pattern,
+because it has a different data constant or constructor in some position, or
+
+\item[non-termination:]
+the value cannot be sufficiently evaluated to decide between the above,
+in the particular order of checking used.
+\end{description}
+If the match succeeds, it supplies values for the variables of the pattern.
+
+A pattern (or sub-pattern) consisting only of variables and pairs
+always matches a value of the appropriate type,
+even if computation of the value would not terminate.
+Such patterns are called \emph{irrefutable}.
+
+Now suppose a function has been defined by a series of definitions
+\begin{quotation}
+	\Samp{--- \Math{f} \sub{\Math{p}}{i1} \Cdots{} \sub{\Math{p}}{in} <= \sub{\Math{e}}{i};}
+\end{quotation}
+for \Math{i} = 1, \ldots, \Math{k},
+or is the expression
+\begin{quotation}
+	\Samp{lambda
+	\sub{\Math{p}}{11} \Cdots{} \sub{\Math{p}}{1n} => \sub{\Math{e}}{1}
+	| \Cdots{} |
+	\sub{\Math{p}}{k1} \Cdots{} \sub{\Math{p}}{kn} => \sub{\Math{e}}{k}
+	}
+\end{quotation}
+(At present, anonymous functions are required to be unary.)
+An application of this function to \Math{n} argument values
+will have zero or more possible values, as follows:
+\begin{itemize}
+\item
+If some patterns \sub{\Math{p}}{ij}
+successfully match the corresponding arguments for some \Math{i},
+and all more specific patterns (if any) fail,
+then a possible value is the value of \sub{\Math{e}}{i},
+with the variables of \sub{\Math{p}}{ij} taking the values they matched.
+
+\item
+If the matching of some pattern does not terminate,
+under some order of checking,
+then non-termination is a possible value.
+\end{itemize}
+If there are no possible values,
+the value of the application is a run-time error.
+Otherwise, one of the possible values is chosen,
+in a deterministic (but otherwise unspecified) manner.
+
+\bibliographystyle{html-plain}
+
+\bibliography{hope}
+
+\nocite{hope}
+\nocite{tutorial}
+\nocite{field&harrison}
+\nocite{bailey}
+
+\appendix
+
+\clearpage
+
+\Section{standard}{Appendix: The Standard module}
+
+\input{Standard}
+
+\clearpage
+
+\Section{deviations}{Deviations from other versions of the language}
+
+The following features are special to this version of \Hope:
+irrefutable patterns,
+operator sections,
+functions of more than one argument,
+recursive \Samp{type} definitions,
+\Samp{input}, \Samp{read}, \Samp{write},
+\Samp{private}, \Samp{abstype},
+\Samp{letrec} and \Samp{whererec}.
+Other versions may not support full lazy evaluation,
+and may have several features not provided here.
+
+This version also supports curried type and data constructors.
+
+The rest of this appendix describes some experimental features of this
+version of the language.
+
+\SubSection{regular}{Regular types}
+
+The type system is generalized to permit \emph{regular} types,
+which are possibly infinite types that are unrollings of finite trees.
+For example, this makes possible a definition of Curry's Y combinator:
+\begin{verbatim}
+      dec Ycurry : (alpha -> alpha) -> alpha;
+      --- Ycurry f <= Z Z where Z == lambda z => f(z z);
+\end{verbatim}
+This fails in the usual type system because \Samp{Z} must have a function
+type with argument type the same as the whole type.
+
+Type synonyms are now allowed to be recursive,
+so they can be used to describe infinite types,
+like the type of infinite sequences:
+\begin{verbatim}
+      type seq alpha == alpha # seq alpha;
+\end{verbatim}
+Recursive uses of the type constructor being defined must have exactly
+the same arguments as the left-hand side.
+However, these arguments may be permuted, as in
+\begin{verbatim}
+      type alternate alpha beta == alpha # alternate beta alpha;
+\end{verbatim}
+The syntax of types is also extended to express regular types.
+For example, the above two types could be defined as
+\begin{verbatim}
+      type seq alpha == mu s => alpha # s;
+      type alternate alpha beta == mu a => alpha # (beta # a);
+\end{verbatim}
+This notation is also used by the system to print regular types.
+
+\SubSection{functors}{Functors}
+
+Each \Samp{data} or \Samp{type} definition introduces a new `map' function
+(or functor, for category theorists)
+with the same name and arity as the type constructor.
+For example, the type definition
+\begin{verbatim}
+      data tree alpha == Empty ++ Node (tree alpha) alpha (tree alpha);
+\end{verbatim}
+also defines a function
+\begin{verbatim}
+      tree : (alpha -> beta) -> tree alpha -> tree beta
+\end{verbatim}
+that maps a function over trees.
+This automatic definition may be explicitly overridden.
+
+It's a little more complicated:
+if the type argument is used negatively, as in
+\begin{verbatim}
+      type cond alpha == alpha -> bool;
+\end{verbatim}
+the function will have a flipped type:
+\begin{verbatim}
+      cond : (alpha -> beta) -> tree beta -> tree alpha
+\end{verbatim}
+If the argument is used both positively and negatively, as in
+\begin{verbatim}
+      type endo alpha == alpha -> alpha;
+\end{verbatim}
+the function will have a type like
+\begin{verbatim}
+      endo : (alpha -> alpha) -> tree alpha -> tree alpha
+\end{verbatim}
+Similarly, an \Samp{abstype} definition declares this corresponding function.
+In order to determine the type,
+each argument is assumed to be used both positively and negatively
+unless the argument variable is replaced with one of the special keywords
+\Samp{pos}, \Samp{neg} or \Samp{none} (indicating that the argument is unused).
+See the previous appendix for some examples.
+
+\end{document}

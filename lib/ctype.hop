@@ -1,0 +1,23 @@
+! character classification functions
+
+dec isalpha, isupper, islower, isdigit, isxdigit, isalnum,
+    isspace, ispunct, isctrl, isascii, isgraph : char -> bool;
+
+dec tolower, toupper : char -> char;
+
+! definitions for ASCII -- adjust for different character sets
+
+--- isalpha c <= isupper c or islower c;
+--- isupper c <= 'A' =< c and c =< 'Z';
+--- islower c <= 'a' =< c and c =< 'z';
+--- isdigit c <= '0' =< c and c =< '9';
+--- isxdigit c <= isdigit c or 'a' =< c and c =< 'f' or 'A' =< c and c =< 'F';
+--- isalnum c <= isalpha c or isdigit c;
+--- isspace c <= c = ' ' or c = '\t' or c = '\n';
+--- ispunct c <= isgraph c and c /= ' ' and not(isalnum c);
+--- isctrl c <= isascii c and not(isgraph c);
+--- isgraph c <= ' ' =< c and c =< '~';
+--- isascii c <= ord c < 128;
+
+--- tolower c <= if isupper c then chr(ord c + 32) else c;
+--- toupper c <= if islower c then chr(ord c - 32) else c;

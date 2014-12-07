@@ -1,0 +1,142 @@
+! general purpose list functions
+
+dec reverse : list alpha -> list alpha;
+!!! reverse [x1, ..., xn] <= [xn, ..., x1];
+
+dec length : list alpha -> num;
+!!! length [x1, ..., xn] <= n;
+
+infixr || : 2;
+dec || : list(alpha) # list(beta) -> list(alpha # beta);
+! || (aka zip) - turn a pair of lists into a list of pairs of corresponding
+! elements.  If the lists differ in length, the extra elements of the longer
+! list are ignored.
+!!! [x1, ..., xn] || [y1, ..., yn] <= [(x1, y1), ..., (xl, yl)]
+!					where l == min(m, n);
+
+dec dist : alpha # list beta -> list(alpha # beta);
+!!! dist(a, [x1, ..., xn]) <= [(a, x1), ..., (a, xn)];
+
+infix @ : 9;
+dec @ : list alpha # num -> alpha;
+! l@n = the element of list `l' in position `n', counting from 0.
+!!! [x0, ..., xn-1]@i <= xi;
+
+dec front, after : num # list alpha -> list alpha;
+! front(n, l) = the first n elements of the list l.
+! after(n, l) = the rest of the list l after the first n elements.
+!!! front(n, [x1, ..., xm]) <= if n <= m then [x1, ..., xn]
+!					 else [x1, ..., xm];
+!!! after(n, [x1, ..., xm]) <= if n <= m then [xn+1, ..., xm]
+!					 else [];
+! front and after satisfy
+!	front(n, l) <> after(n, l) = l,
+! even if l has fewer than n elements.
+
+! the list functor is a.k.a. map for backward compatability.
+dec map : (alpha -> beta) -> list alpha -> list beta;
+! map f l = the list obtained from l by applying f to each element.
+!!! map f [x1, ..., xn] <= [f(x1), ..., f(xn)];
+
+dec foldr : beta # (alpha # beta -> beta) -> (list alpha -> beta);
+! foldr - summarize a list using a constant and binary function:
+!!! foldr(c, f)([x1, ..., xn]) <= f(x1, f(x2, ... f(xn, c) ... ));
+! e.g. foldr(0, (+))([1, 2, 3, 4]) = 10,
+!      foldr(1, (*))([1, 2, 3, 4]) = 24
+
+dec foldl : beta # (beta # alpha -> beta) -> (list alpha -> beta);
+! foldl - like foldr, but from the left
+!!! foldl(c, f)([x1, ..., xn]) <= f( ... f(c, xn), ..., x1)
+
+dec iterate : (alpha -> alpha) -> alpha -> list alpha;
+!!! iterate f x <= [x, f x, f(f x), ... ];
+
+dec filter : (alpha -> bool) -> list alpha -> list alpha;
+! filter cond l = the list consisting of the elements of the list l that
+!	the function cond maps to true.
+
+dec partition : (alpha -> bool) -> list alpha -> list alpha # list alpha;
+!!! partition cond l <= (filter cond l, filter (not o cond) l);
+
+dec front_with, after_with : (alpha -> bool) -> list alpha -> list alpha;
+! front_with cond l = the longest initial segment of the list l
+!	satisfying cond
+! after_with cond l = the rest of the list l after the longest initial
+!	segment satisfying cond.
+!!! front_with cond [x1, ..., xn] <= [x1, ..., xm];
+!!! after_with cond [x1, ..., xn] <= [xm+1, ..., xn];
+! where	cond xi = true for 1 <= i <= m, and
+!	m = n or cond(xm+1) = false
+! front_with and after_with satisfy
+!	front_with cond l <> after_with cond l = l
+
+dec span : (alpha -> bool) -> list alpha -> list alpha # list alpha;
+!!! span cond l <= (front_with cond l, after_with cond l);
+
+private;
+
+dec shunt : list alpha # list alpha -> list alpha;
+--- shunt([], ys) <= ys;
+--- shunt(x::xs, ys) <= shunt(xs, x::ys);
+
+--- reverse xs <= shunt(xs, []);
+
+--- length [] <= 0;
+--- length(x::xs) <= succ(length xs);
+
+dec zip' : alpha -> list alpha -> list beta -> list(alpha # beta);
+--- zip' x xs [] <= [];
+--- zip' x xs (y::ys) <= (x, y)::(xs||ys);
+
+--- [] || ys <= [];
+--- x::xs || ys <= zip' x xs ys;
+
+--- dist(x, []) <= [];
+--- dist(x, y::ys) <= (x, y) :: dist(x, ys);
+
+--- (x::xs)@0 <= x;
+--- (x::xs)@succ n <= xs@n;
+
+dec front' : num # list alpha -> list alpha;
+--- front'(n, []) <= [];
+--- front'(n, x::xs) <= x::front(n, xs);
+
+--- front(0, xs) <= [];
+--- front(succ n, xs) <= front'(n, xs);
+
+--- after(0, xs) <= xs;
+--- after(n, []) <= [];
+--- after(succ n, x::xs) <= after(n, xs);
+
+--- map f [] <= [];
+--- map f (x::xs) <= f x::map f xs;
+
+--- foldr(c, op) [] <= c;
+--- foldr(c, op) (x::xs) <= op(x, foldr(c, op) xs);
+
+--- foldl(c, op) [] <= c;
+--- foldl(c, op) (x::xs) <= foldl(op(c, x), op) xs;
+
+--- iterate f x <= x::iterate f (f x);
+
+--- filter cond [] <= [];
+--- filter cond (x::xs) <=
+	if cond x then x::filter cond xs
+		 else filter cond xs;
+
+--- partition cond [] <= ([], []);
+--- partition cond (x::xs) <=
+        if cond x then (x::ayes, nayes) else (ayes, x::nayes)
+	where (ayes, nayes) == partition cond xs;
+
+--- front_with cond [] <= [];
+--- front_with cond (x::xs) <= if cond x then x::front_with cond xs else [];
+
+--- after_with cond [] <= [];
+--- after_with cond (x::xs) <= if cond x then after_with cond xs else x::xs;
+
+--- span cond [] <= ([], []);
+--- span cond (x::xs) <=
+	if cond x
+	then (x::f, a) where (f, a) == span cond xs
+	else ([], x::xs);

@@ -1,0 +1,178 @@
+! The standard environment for Hope, implicitly used by every session
+! and module.
+
+!! Standard type constructors
+
+! Standard type variables.
+
+typevar alpha, beta, gamma;
+
+! Function and product types.
+
+infixr -> : 2;
+abstype neg -> pos;
+
+infixr # : 4;
+abstype pos # pos;
+
+--- (a # b) (x, y) <= (a x, b y);
+
+infixr X : 4;
+type alpha X beta == alpha # beta;
+
+! Normal right-to-left composition of f and g.
+
+infix o : 2;
+dec o : (beta -> gamma) # (alpha -> beta) -> alpha -> gamma;
+--- (f o g) x <= f(g x);
+
+--- (a -> b) f <= b o f o a;
+
+! The identity function.
+
+dec id : alpha -> alpha;
+--- id x <= x;
+
+! Booleans with the standard operations.
+
+data bool == false ++ true;
+type truval == bool;
+
+infix or : 1;
+infix and : 2;
+
+dec not : bool -> bool;
+--- not true <= false;
+--- not false <= true;
+
+dec and : bool # bool -> bool;
+--- false and p <= false;
+--- true and p <= p;
+
+dec or : bool # bool -> bool;
+--- true or p <= true;
+--- false or p <= p;
+
+dec if_then_else : bool -> alpha -> alpha -> alpha;
+--- if true then x else y <= x;
+--- if false then x else y <= y;
+
+! Lists.
+
+infixr :: : 5;
+data list alpha == nil ++ alpha :: list alpha;
+
+! List concatenation.
+
+infixr <> : 5;
+dec <> : list alpha # list alpha -> list alpha;
+--- [] <> ys <= ys;
+--- (x::xs) <> ys <= x::(xs <> ys);
+
+! The type num behaves as if it were defined by:
+!	data num == 0 ++ succ num;
+! but is actually implemented a little more efficiently.
+! The type also contains negative numbers (and reals in some implementations).
+
+data num == succ num;
+
+! Similarly, the type char behaves as if it were defined as an enumeration
+! (in the normal order) of all the ASCII character constants.
+
+abstype char;
+
+--- char x <= x;
+
+!! Internally defined functions
+
+! Comparison functions:
+! these evaluate their arguments only to the extent necessary to determine
+! their order.  In comparing distinct constants and constructors, the
+! lesser is the one which came earlier in the data definition in which
+! both were defined.  Pairs compare lexicographically, while comparison
+! of functions triggers a run-time error.  On the types num, char and
+! list(char), these rules give the normal orderings.
+
+infix =, /= : 3;
+infix <, =<, >, >= : 4;
+dec =, /=, <, =<, >, >= : alpha # alpha -> bool;
+
+! Lower-level comparison functions.
+
+data relation == LESS ++ EQUAL ++ GREATER;
+
+dec compare : alpha # alpha -> relation;
+
+--- x =  y <= (\ EQUAL => true | _ => false) (compare(x, y));
+--- x /= y <= (\ EQUAL => false | _ => true) (compare(x, y));
+--- x <  y <= (\ LESS => true | _ => false) (compare(x, y));
+--- x >= y <= (\ LESS => false | _ => true) (compare(x, y));
+--- x >  y <= (\ GREATER => true | _ => false) (compare(x, y));
+--- x =< y <= (\ GREATER => false | _ => true) (compare(x, y));
+
+! Conversions.
+
+dec ord : char -> num;
+dec chr : num -> char;
+
+dec num2str : num -> list char;
+dec str2num : list char -> num;
+
+! The contents of a named file (created lazily).
+
+dec read : list char -> list char;
+
+! Abort execution with an error message.
+
+dec error : list char -> alpha;
+
+! The usual arithmetical functions.
+
+infix +, - : 5;
+infix *, /, div, mod : 6;
+dec +, -, *, /, div, mod : num # num -> num;
+
+! Math library.
+
+dec cos, sin, tan, acos, asin, atan : num -> num;
+dec atan2, hypot : num # num -> num;
+dec cosh, sinh, tanh, acosh, asinh, atanh : num -> num;
+dec abs, ceil, floor : num -> num;
+dec exp, log, log10, sqrt : num -> num;
+dec pow : num # num -> num;
+dec erf, erfc : num -> num;
+
+! Any extra arguments on the interpreter command line.
+
+dec argv : list(list char);
+
+! Part of the special treatment of the succ constructor.
+
+dec succ : num -> num;
+--- succ n <= n+1;
+
+private;			! Bootstrapping
+
+! Output management:
+
+dec return : alpha;		! evaluation causes an immediate exit
+
+dec print : alpha -> beta;	! strict built-in function
+!!! print x <= return;		! side effect: print x
+
+dec write_element : alpha -> list alpha -> beta; ! strict built-in function
+!!! write_element x <= write_list;	! side effect: print x in write form
+
+dec write_list : list alpha -> beta;
+--- write_list [] <= return;
+--- write_list(x::xs) <= write_element x xs;
+
+! lexicographical ordering for pairs
+dec compare_cond : relation -> alpha -> alpha -> alpha -> alpha;
+--- compare_cond LESS l e g <= l;
+--- compare_cond EQUAL l e g <= e;
+--- compare_cond GREATER l e g <= g;
+
+dec cmp_pair : (alpha # beta) # (alpha # beta) -> relation;
+--- cmp_pair((x1, y1), (x2, y2)) <=
+	compare_cond (compare(x1, x2)) LESS (compare(y1, y2)) GREATER;

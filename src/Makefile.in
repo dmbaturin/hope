@@ -1,0 +1,144 @@
+SHELL	= /bin/sh
+
+# stuff from configure:
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+# Fiddlable parameters:
+# What the program is called.
+name	= @PACKAGE@
+# Where to put the executable version.
+bindir	= @bindir@
+# Small test suite, used by "make check".
+testdir = ../test
+
+# more stuff from configure:
+AWK	= @AWK@
+CC	= @CC@
+CFLAGS	= @CFLAGS@
+INSTALL	= @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+LDFLAGS	= @LDFLAGS@
+LIBS	= @LIBS@
+YACC	= @YACC@
+mandir	= @mandir@/man1
+
+# Where the standard modules live.
+hopelib	= @HOPELIB@
+
+c_srcs = bad_rectype.c builtin.c cases.c char.c char_array.c compare.c \
+        compile.c deftype.c eval.c expr.c functor_type.c functors.c \
+        interpret.c interrupt.c main.c memory.c module.c newstring.c \
+        number.c output.c path.c polarity.c pr_expr.c pr_ty_value.c \
+        pr_type.c pr_value.c remember_type.c runtime.c set.c source.c \
+        stream.c table.c type_check.c type_value.c value.c yylex.c
+parser	= yyparse
+
+sources = $(c_srcs) $(parser).y
+c_made	= $(parser).c
+h_made	= hopelib.h $(parser).h
+other_made = op.sed
+tmps	= y.output y.tab.y y.tab.h y.tab.c y.tab.o
+
+assoc	= Assoc.sed
+mult_op	= Mult-op.awk
+
+cfiles	= $(c_srcs) $(c_made)
+objects	= $(cfiles:.c=.o)
+
+$(name): $(objects)
+	$(CC) $(LDFLAGS) -o $@ $(objects) $(LIBS)
+
+all: $(name) $(name).1
+
+install: check $(name).1
+	$(INSTALL) -d $(hopelib)
+	$(INSTALL_PROGRAM) -s $(name) $(bindir)
+	$(INSTALL_DATA) $(name).1 $(mandir)
+
+$(name).1: $(name).1.in
+	sed -e 's:@hopelib@:$(hopelib):' -e 's:@fullpath@:$(bindir)/$(name):' $(name).1.in >$@
+
+cfiles: $(c_made) $(h_made)
+
+# Miscellaneous derived files
+
+tags:	$(sources)
+	ctags -tw $(sources)
+
+# Various levels of safe clean-up:
+#	distclean - temporary files, object files and executables
+#	new	- generated files specific to an architecture
+#	clean	- all generated files except the main program
+#	clobber	- all generated files
+
+distclean: cfiles
+	rm -f *.o core a.out errors
+	rm -f $(name)
+	rm -f $(tmps)
+
+new:
+	rm -f *.o core a.out errors $(h_made)
+	rm -f $(name)
+
+clean:
+	rm -f *.o core a.out errors tags LOG
+	rm -f $(h_made) $(c_made) $(other_made)
+	rm -f $(tmps)
+
+clobber: clean
+	rm -f $(name) $(name).1
+
+# Test a new version of the interpreter, by
+# (1) running it on some examples and comparing with the expected output.
+# (2) checking all the system modules go through OK.
+# If all is well, there will be no output.
+
+errors:	$(name) $(testdir)/*.in $(testdir)/*.out ../lib/*
+	for file in $(testdir)/*.in;\
+	do	STEM=`basename $$file .in`;\
+		HOPEPATH=../lib nice ./$(name) -f $$file 2>&1 |\
+			diff - $(testdir)/$$STEM.out |\
+			sed "s/^/$$STEM: /";\
+	done >$@
+	LC_ALL=C; for file in ../lib/[a-z]*.hop;\
+	do	HOPEPATH=../lib nice ./$(name) -f $$file 2>&1;\
+	done >>$@
+
+check:	errors
+	test ! -s errors
+
+hopelib.h:
+	echo '#define HOPELIB "$(hopelib)"' >$@
+
+# Generate parser from $(parser).y by using one sed file (generated from op.h)
+# to replicate all lines mentioning BINARY, and another to give the generated
+# tokens the correct associativity.
+
+# The hiding of yyerrstatus is a hack for Bison: see yyparse.y
+
+$(parser).h $(parser).c: $(parser).y op.sed $(assoc)
+	sed -f op.sed $(parser).y | sed -f $(assoc) >y.tab.y
+	$(YACC) $(YFLAGS) -d y.tab.y
+	grep -v '^# *line' y.tab.c |\
+		sed -e '1s/*malloc(), //' -e 's:^  int yyerrstatus;:/* & */:' >$(parser).c
+	mv y.tab.h $(parser).h
+	rm -f y.tab.y y.tab.c
+
+op.sed: op.h $(mult_op)
+	$(AWK) -f $(mult_op) op.h >$@
+
+# for grammar debugging
+
+y.output: $(parser).y op.sed $(assoc)
+	sed -f op.sed $(parser).y | sed -f $(assoc) >y.tab.y
+	$(YACC) -v y.tab.y
+	rm -f y.tab.y y.tab.c
+
+# Generate dependencies of source files on header files.
+# Only inclusions of relative file names yield dependencies.
+
+depend:	cfiles
+	../sh/makedepend -- $(DEFS) -- $(c_srcs) $(c_made)
+

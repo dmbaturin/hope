@@ -1,0 +1,13 @@
+! Sum type
+
+infixr OR : 3;
+data alpha OR beta == Left alpha ++ Right beta;
+
+infixr \/ : 1;
+dec \/ : (alpha -> gamma) # (beta -> gamma) -> alpha OR beta -> gamma;
+--- (f \/ g) (Left x) <= f x;
+--- (f \/ g) (Right y) <= g y;
+
+dec either : alpha OR alpha -> alpha;
+--- either(Left x) <= x;
+--- either(Right y) <= y;

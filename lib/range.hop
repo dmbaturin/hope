@@ -1,0 +1,11 @@
+! functions returning ranges of numbers
+
+! m..n = the list of integers between m and n inclusive.
+! from n = the infinite list of integers starting at n.
+
+infix .. : 4;
+dec .. : num # num -> list num;
+--- n..m <= if n > m then [] else n::(succ n..m);
+
+dec from : num -> list num;
+--- from n <= n::from(succ n);

@@ -1,0 +1,27 @@
+! various higher-order functions
+
+! reversed function application. e.g. x.f.g.h = h(g(f(x)))
+infix . : 9;
+dec . : alpha # (alpha -> beta) -> beta;
+--- x.f <= f(x);
+
+! curry - turn a binary function into a function producing a function.
+!	(Named after Haskell B. Curry)
+! e.g. curry f x y = f(x, y)
+dec curry : (alpha # beta -> gamma) -> alpha -> beta -> gamma;
+--- curry f <= lambda x => lambda y => f(x, y);
+
+dec uncurry : (alpha -> beta -> gamma) -> alpha # beta -> gamma;
+--- uncurry f (x, y) <= f x y;
+
+dec mkpair : alpha -> beta -> alpha # beta;
+--- mkpair x y <= (x, y);
+
+! const c = a function mapping everything to c.
+dec const : alpha -> beta -> alpha;
+--- const x y <= x;
+
+! times n f = f composed n times (Church numerals)
+dec times : num -> (alpha -> alpha) -> alpha -> alpha;
+--- times 0 f <= id;
+--- times (succ n) f <= f o times n f;

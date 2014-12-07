@@ -1,0 +1,19 @@
+#!/bin/sh
+
+: extract the grammar from a Yacc file
+
+sed '
+	1,/%%/d
+	/%%/,$d
+	/^	*{.*}/d
+	/^	*{/,/}/d
+	s/[ 	]*%prec.*//
+	s/\/\*.*\*\///
+	/\/\*/,/\*\//d
+	/ 	*{/!{
+		s/[ 	]*{/\
+{/
+		P
+		D
+	}
+' ${1-yyparse.y} | cat -s

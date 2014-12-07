@@ -1,0 +1,34 @@
+! the Maybe monad
+
+! c.f. "The essence of functional programming", P. Wadler, POPL, 1992.
+
+data maybe alpha == No ++ Yes alpha;
+
+dec unit_maybe : alpha -> maybe alpha;
+--- unit_maybe x <= Yes x;
+
+dec bind_maybe : maybe alpha -> (alpha -> maybe beta) -> maybe beta;
+--- bind_maybe No f <= No;
+--- bind_maybe (Yes x) f <= f x;
+
+! assertions
+
+infix AND : 2;
+dec AND : bool # maybe alpha -> maybe alpha;
+--- true AND x <= x;
+--- false AND y <= No;
+
+! exceptions
+
+infix OR : 1;
+dec OR : maybe alpha # alpha -> alpha;
+--- No OR y <= y;
+--- (Yes x) OR y <= x;
+
+infix --> : 2;
+dec --> : bool # alpha -> maybe alpha;
+--- false --> x <= No;
+--- true --> x <= Yes x;
+
+dec flatten : maybe alpha -> alpha;
+--- flatten(Yes x) <= x;

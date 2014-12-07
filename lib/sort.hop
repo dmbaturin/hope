@@ -1,0 +1,75 @@
+! sorting
+
+dec sort : list alpha -> list alpha;
+
+dec uniq : list alpha -> list alpha;
+!	eliminate adjacent duplicates from a list
+
+private;
+
+! Here are 4 implementations of sorting - take your pick
+
+uses list;
+
+! Insertion sorting
+
+dec insert : alpha # list alpha -> list alpha;
+--- insert(x, []) <= [x];
+--- insert(x, y::ys) <= if x < y then x::y::ys else y::insert(x, ys);
+
+dec isort : list alpha -> list alpha;
+--- isort <= foldr([], insert);
+
+! Selection sorting
+
+dec select : list(alpha) -> alpha # list(alpha);
+--- select [x] <= (x, []);
+--- select(x::y::l) <=
+	if x < least then (x, least::rest) else (least, x::rest)
+	where (least, rest) == select(y::l);
+
+dec ssort : list(alpha) -> list(alpha);
+--- ssort [] <= [];
+--- ssort(x::xs) <=
+	least :: ssort(rest) where (least, rest) == select(x::xs);
+
+! Partition sorting (quicksort)
+
+dec qsort' : list alpha # list alpha -> list alpha;
+!!! qsort'(xs, ys) <= qsort xs <> ys;
+--- qsort'([], ys) <= ys;
+--- qsort'(x::xs, ys) <=
+	qsort'(smaller, x::qsort'(larger, ys))
+	where (smaller, larger) == partition (< x) xs;
+
+dec qsort : list alpha -> list alpha;
+--- qsort xs <= qsort'(xs, []);
+
+! Merge sorting
+
+dec split : list alpha -> list alpha # list alpha;
+--- split [] <= ([], []);
+--- split(x::xs) <= (x::zs, ys) where (ys, zs) == split xs;
+
+dec merge : list alpha # list alpha -> list alpha;
+--- merge([], ys) <= ys;
+--- merge(xs, []) <= xs;
+--- merge(x::xs, y::ys) <=
+	if x < y then x::merge(xs, y::ys) else y::merge(x::xs, ys);
+
+dec msort : list alpha -> list alpha;
+--- msort [] <= [];
+--- msort [x] <= [x];
+--- msort(x1::x2::xs) <=
+	merge(msort(x1::ys), msort(x2::zs)) where (ys, zs) == split xs;
+
+--- sort <= msort;
+
+! Removal of duplicates
+
+dec uniq' : alpha -> list alpha -> list alpha;
+--- uniq' x [] <= [];
+--- uniq' x (y::ys) <= if x = y then uniq' x ys else y::uniq' y ys;
+
+--- uniq [] <= [];
+--- uniq(x::xs) <= x::uniq' x xs;

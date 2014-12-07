@@ -1,0 +1,47 @@
+! infinite sequences
+
+uses products, fold;
+
+type seq alpha == alpha # seq alpha;
+
+dec fold_seq : (alpha # beta -> beta) -> seq alpha -> beta;
+--- fold_seq <= fold (id #);
+
+dec unfold_seq : (beta -> alpha # beta) -> beta -> seq alpha;
+--- unfold_seq <= unfold (id #);
+
+dec gen_seq : (alpha -> alpha) -> alpha -> seq alpha;
+--- gen_seq f <= unfold_seq (id /\ f);
+
+dec filter_seq : (alpha -> bool) -> seq alpha -> seq alpha;
+--- filter_seq cond <=
+	fold_seq (lambda (x, y) => if cond x then (x, y) else y);
+
+dec zip_seq : seq alpha # seq beta -> seq(alpha # beta);
+--- zip_seq <= unfold_seq flip;
+
+dec unzip_seq : seq(alpha # beta) -> seq alpha # seq beta;
+--- unzip_seq <= seq fst /\ seq snd;
+
+dec transpose : seq(seq alpha) -> seq(seq alpha);
+--- transpose <= unfold (id #) unzip_seq;
+!!! transpose <= fold (id #) zip_seq;
+
+uses list;
+
+dec front_seq : num # seq alpha -> list alpha;
+--- front_seq(0, s) <= [];
+--- front_seq(n+1, (x, xs)) <= x::front_seq(n, xs);
+
+dec after_seq : num # seq alpha -> seq alpha;
+--- after_seq(0, s) <= s;
+--- after_seq(n+1, (x, xs)) <= after_seq(n, xs);
+
+dec split_seq : (alpha -> bool) -> seq alpha -> list alpha # seq alpha;
+--- split_seq p (x, xs) <=
+	if p x then ((x::) # id) (split_seq p xs)
+		else ([], xs);
+
+dec select_seq : num # seq alpha -> alpha;
+--- select_seq(0, (x, xs)) <= x;
+--- select_seq(n+1, (x, xs)) <= select_seq(n, xs);

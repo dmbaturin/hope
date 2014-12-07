@@ -1,0 +1,33 @@
+! a binary tree type
+
+data tree alpha == Tip ++ Branch(alpha # tree alpha # tree alpha);
+
+dec fold_tree : beta # (alpha # beta # beta -> beta) ->
+		tree alpha -> beta;
+--- fold_tree(e, n) Tip <= e;
+--- fold_tree(e, n) (Branch(x, l, r)) <=
+	n(x, fold_tree(e, n) l, fold_tree(e, n) r);
+
+dec flatten : tree alpha -> list alpha;
+
+dec show_tree : (alpha -> list char) -> tree alpha -> list char;
+
+private;
+
+dec append : tree alpha # list alpha -> list alpha;
+--- append(Tip, xs) <= xs;
+--- append(Branch(x, l, r), xs) <= append(l, x::append(r, xs));
+
+--- flatten t <= append(t, []);
+
+	dec show_tree' : (alpha -> list char) ->
+		list char -> tree alpha -> list char -> list char;
+	--- show_tree' show_elt prefix Tip rest <= "";
+	--- show_tree' show_elt prefix (Branch(x, l, r)) rest <=
+		let prefix' == "  " <> prefix in
+		show_tree' show_elt prefix' l (
+			prefix <> show_elt x <> "\n" <>
+			show_tree' show_elt prefix' r rest
+		);
+
+--- show_tree show_elt t <= show_tree' show_elt "" t "";

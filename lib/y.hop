@@ -1,0 +1,7 @@
+! fixed point combinators
+
+dec Ycurry : (alpha -> alpha) -> alpha;
+--- Ycurry f <= Z Z where Z == lambda z => f(z z);
+
+dec Yturing : (alpha -> alpha) -> alpha;
+--- Yturing <= Z Z where Z == lambda z => lambda f => f(z z f);

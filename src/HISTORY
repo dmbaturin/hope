@@ -1,0 +1,63 @@
+REVISION HISTORY
+
+I originally wrote this interpreter to have a well-behaved implementation
+of a simple functional language for use with an undergraduate course.
+
+31 Jul 1988	initial version used in CS225 at UofQ
+
+31 Jan 1989	added type, abstype, private, parameterless definitions
+
+ 4 Mar 1989	added operator sections
+
+16 Jul 1989	general clean-up; use of "Standard" module
+
+25 Jul 1989	#ifdef AMIGA sections [Bill Segall, Ross]
+
+ 6 Nov 1989	back end rewritten to use a Krivine machine;
+		simplification of pattern compilation.  [Ross, Andrew Moran]
+		output & comparison functions in "Standard". 
+
+11 Mar 1990	edit command, and re-editing (RE_EDIT)
+
+ 3 Jul 1990	switched from reference counting to mark-scan garbage
+		collection;
+		added letrec/whererec; num as double. 
+
+10 Mar 1991	improved re-editing (inspired by the Mocka system).
+		re-organization of pattern matching, including best-fit
+		and more efficient character matching.
+		n+k pattern as abbreviation for succ^k(n).
+		replaced update markers with stack frames.
+
+12 Jan 1993	added curried function definitions.
+		caught redefinition of values as constructors/constants
+		and vice versa.
+		changed treatment of primed type variables.
+
+19 Jan 1993	regular types (i.e. type synonyms may be recursive).
+		lazy expansion of type synonyms.
+
+22 Feb 1993	'dec' declarations may be fulfilled by data constructors.
+
+21 Apr 1993	automatic declaration and definition of 'map' functions
+		corresponding to type and type constructor identifiers.
+		They may be overridden with explicit definitions.
+
+ 4 Nov 1993	support for UTF-encoded Unicode characters.
+
+25 Mar 1994	curried data and type constructors.
+		made 'compare' available.
+
+ 1 Jul 1994	added options for use in a CGI.
+
+15 Dec 1994	small extension to recursive type synonyms: permutations
+		of arguments now allowed in recursive uses.
+
+15 Mar 1995	cyclic types now printed using mu-notation.
+		added mu-expressions.
+
+16 Aug 1995	added the black hole optimization.
+
+11 Jun 1997	added -f command line argument, #! hack and argv.
+
+16 Apr 1999	cleanup, autoconf, GPL.

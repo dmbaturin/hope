@@ -1,0 +1,3 @@
+uses seq, arith;
+
+front_seq(25, primes);

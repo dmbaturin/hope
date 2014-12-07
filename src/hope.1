@@ -1,0 +1,90 @@
+.TH HOPE 1
+.SH NAME
+hope \- a lazy interpreter for the functional language Hope
+.SH SYNOPSIS
+.B hope
+[
+.B \-lr
+] 
+[
+.B \-f
+.I file
+]
+[
+.B \-t
+.I nsecs
+]
+[
+.I args
+]
+.SH DESCRIPTION
+.LP
+.B Hope
+is an interactive interpreter for a lazy variant
+of the functional language Hope.
+It is most commonly run without options or arguments,
+and reads commands from the standard input,
+and prints results on the standard output.
+If the standard input is a terminal,
+.I hope
+prompts with the string
+.RI ` >: '.
+A simple use is to enter an expression, terminated by a semicolon.
+The interpreter will respond by printing the value and type of the expression,
+< preceded by
+.RI ` >> '.
+For example,
+.nf
+    \fI>:\fP 6*7;
+    \fI>>\fP 42 : num
+.fi
+.LP
+See the documentation for more complicated uses.
+.SH OPTIONS
+These options are mainly useful for non-interactive use of the interpreter.
+.IP \fB\-l\fP
+Generate a listing of the input, with embedded error messages.
+.IP \fB\-r\fP
+The interpreter is run in restricted mode:
+all file I/O is disabled (except for reading of libraries).
+.IP \fB\-f\fR\ \fIfile\fR
+Read input from
+.I file
+instead of the standard input.
+This is useful for Hope scripts, whose first line would be
+.nf
+    \fB"#! /usr/local/bin/hope -f\fP \fIarg\fP ...
+.fi
+Any additional arguments will be available through the variable
+.IR argv .
+.IP \fB\-t\fR\ \fIn\fR
+Evaluation of any expression is interrupted if it takes more than
+.I n
+seconds.
+.SH FILES
+.IP /usr/local/share/hope/lib
+The standard library directory.
+.SH ENVIRONMENT
+.IP \fBHOPEPATH\fP
+A colon-separated list of directories to search for Hope modules in
+.B uses
+commands.
+An empty entry refers to the standard library directory.
+The default value is
+.RI ` .: '.
+.LP
+A Hope module
+.I name
+is stored in a file `\fIname\fP\fB.hop\fP'.
+.SH "SEE ALSO"
+.IP \(bu
+.IR "A Hope Interpreter \- Reference" ,
+Ross Paterson.
+.IP \(bu
+.IR "A Hope Tutorial" ,
+Roger Bailey.
+.LP
+Both documents should be distributed with this program.
+.SH AUTHOR
+.LP
+Ross Paterson <ross@soi.city.ac.uk> 

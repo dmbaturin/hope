@@ -1,0 +1,103 @@
+#!/bin/sh
+
+# Generate dependencies of source files on header files.
+# Only inclusions of relative file names yield dependencies.
+
+cppflags=
+files=
+replace=true
+makefile=
+objsuffix=.o
+delimiter="# DO NOT DELETE THIS LINE -- make depend depends on it."
+width=78
+picky=true
+
+for arg
+do
+	case $arg in
+	-[DI]*)	cppflags="$cppflags $arg" ;;
+	-Y*)	dir=`expr "$arg" : '-.\(.*\)'`
+		cppflags="$cppflags -nostdinc"
+		case "$dir" in
+		?*)	cppflags="$cppflags -I$dir" ;;
+		esac ;;
+	-a)	replace=false ;;
+	-f*)	makefile=`expr "$arg" : '-.\(.*\)'` ;;
+	-g)	;;		# don't know what this is
+	-m)	;;		# unimplemented
+	-o*)	objsuffix=`expr "$arg" : '-.\(.*\)'` ;;
+	-p*)	objprefix=`expr "$arg" : '-.\(.*\)'` ;;
+	-s*)	delimiter=`expr "$arg" : '-.\(.*\)'` ;;
+	-v)	;;		# unimplemented
+	-w*)	width=`expr "$arg" : '-.\(.*\)'` ;;
+	--)	case $picky in
+		true) picky=false ;;
+		false) picky=true ;;
+		esac ;;
+	-*)	if $picky
+		then	echo "$0: warning:  ignoring option '$arg'" >&2
+		fi ;;
+	*)	files="$files $arg" ;;
+	esac
+done
+
+case "$makefile" in
+"")	if [ -f makefile ]
+	then	makefile=makefile
+	else	makefile=Makefile
+	fi ;;
+esac
+
+if [ -f $makefile ] && grep -s "^$delimiter\$" $makefile >/dev/null
+then
+	if $replace
+	then	ed - $makefile <<EOF
+/^$delimiter\$/,\$c
+$delimiter
+.
+w
+q
+EOF
+	fi
+else
+	echo "$delimiter" >>$makefile
+fi
+
+for file in $files
+do	objname="$objprefix"`expr "$file" : '\(.*\)\.[^.]*$'`"$objsuffix"
+	gcc $cppflags -E $file |
+		grep '^# 1 "[a-z0-9A-Z][^"]*"' |
+		sed '	s/[^"]*"\([^"]*\)".*/\1/
+			s|///*|/|g
+			: dotloop
+				s|/./|/|g
+				t dotloop
+			s|^./||
+			: ddloop
+				s|[^/][^/]*/\.\./||g
+				t ddloop
+			'"s|^|$objname |" |
+		fgrep -v " $file"
+done | sort -u |
+	awk '	$1 != last {
+			if (NR > 1)
+				print line
+			line = $1 ":"
+			line_length = length(line)
+			last = $1
+		}
+		{
+			word_length = length($2)
+			line_length += 1 + word_length
+			if (line_length < max_line_length)
+				line = line " " $2
+			else {
+				print line, "\\"
+				line = "\t" $2
+				line_length = 8 + word_length
+			}
+		}
+		END {
+			if (NR > 0)
+				print line
+		}' "max_line_length=$width" - >>$makefile

@@ -1,0 +1,3 @@
+uses list, lines;
+lines(read "../test/hope_tut.in")@200;
+write "Hello world\n";
