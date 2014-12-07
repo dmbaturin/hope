@@ -157,7 +157,7 @@ yylex(void)
 				inptr = start;
 				return ';';
 			}
-			if (! getline())
+			if (! _getline())
 				return EOF;
 		} else if (IsDigit(c)) {
 			/*
